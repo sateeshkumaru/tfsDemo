@@ -1,0 +1,138 @@
+# vehicle-owner/Dockerfile
+FROM maven:3.8.6-openjdk-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn package -DskipTests
+
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=build /app/target/vehicle-owner-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8083
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+---
+
+# vehicle-owner/pom.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>vehicle-owner</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>vehicle-owner</name>
+    <description>Vehicle Owner Service</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+---
+
+# vehicle-owner/src/main/java/com/example/owner/VehicleOwnerApplication.java
+package com.example.owner;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class VehicleOwnerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(VehicleOwnerApplication.class, args);
+    }
+}
+
+---
+
+# vehicle-owner/src/main/java/com/example/owner/model/OwnerDTO.java
+package com.example.owner.model;
+
+public class OwnerDTO {
+    private Long ownerId;
+    private String name;
+    private String licenseNumber;
+
+    // Constructors
+    public OwnerDTO() {}
+    public OwnerDTO(Long ownerId, String name, String licenseNumber) {
+        this.ownerId = ownerId;
+        this.name = name;
+        this.licenseNumber = licenseNumber;
+    }
+
+    // Getters and setters
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getLicenseNumber() { return licenseNumber; }
+    public void setLicenseNumber(String licenseNumber) { this.licenseNumber = licenseNumber; }
+}
+
+---
+
+# vehicle-owner/src/main/java/com/example/owner/controller/OwnerController.java
+package com.example.owner.controller;
+
+import com.example.owner.model.OwnerDTO;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/owners")
+public class OwnerController {
+
+    @GetMapping("/{ownerId}")
+    public OwnerDTO getOwnerById(@PathVariable Long ownerId) {
+        // Simulated data for demo
+        return new OwnerDTO(ownerId, "John Doe", "ABC123");
+    }
+}
+
+---
+
+# vehicle-owner/src/main/resources/application.yml
+server:
+  port: 8083
+spring:
+  application:
+    name: vehicle-owner
