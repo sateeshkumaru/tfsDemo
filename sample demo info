@@ -136,7 +136,89 @@ Would you like the full controller as well, or should we generate test-only vers
 
 
 
+++++
+To implement dynamic mocking in WireMock where:
+
+If the postal code is 5 digits, return valid
+
+Else, return invalid
+
+You’ll use WireMock request matching with regex and response templating.
+
+✅ 1. Enable Response Templating
+Update your docker-compose.yml or WireMock run command to enable templating:
+
+yaml
+Copy
+Edit
+services:
+  wiremock:
+    image: wiremock/wiremock:3.5.3
+    ports:
+      - "8081:8080"
+    command: ["--global-response-templating"]
+    volumes:
+      - ./wiremock:/home/wiremock
+✅ 2. Create WireMock Mapping with Regex and Response Template
+📄 mappings/validate-postal.json
+json
+Copy
+Edit
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/validate-postal/([0-9]+)"
+  },
+  "response": {
+    "status": 200,
+    "body": "{{#if (matches request.path '[0-9]{5}$')}}{\"valid\": true}{{else}}{\"valid\": false}{{/if}}",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": ["response-template"]
+  }
+}
+Explanation
+urlPattern: Matches /validate-postal/12345 or similar
+
+The body is conditionally rendered:
+
+If last segment of the path is a 5-digit number, return {"valid": true}
+
+Otherwise, return {"valid": false}
+
+🧪 Examples
+Request URL	Response
+/validate-postal/12345	{ "valid": true }
+/validate-postal/999	{ "valid": false }
+/validate-postal/abcd	{ "valid": false }
+
+✅ Test It
+Start WireMock via Docker:
+
+bash
+Copy
+Edit
+docker-compose up
+Make a test call:
+
+bash
+Copy
+Edit
+curl http://localhost:8081/validate-postal/12345
+# → { "valid": true }
+
+curl http://localhost:8081/validate-postal/999
+# → { "valid": false }
+Would you like a second dynamic stub for the internal API (e.g., different ownerId → different data)?
+
+
+
+
 
 Tools
+
+
+
 
 
