@@ -1,0 +1,142 @@
+Here's how you can implement the ExternalApiService and InternalOwnerService in a clean, modular way for your vehicle app. These services will communicate with the mocked APIs running on WireMock Docker during component tests.
+
+📦 Assumptions
+External API base URL: http://localhost:8081
+
+Internal API base URL: http://localhost:8081
+
+Spring Boot version: 3.4
+
+Java: 11
+
+✅ 1. ExternalApiService
+java
+Copy
+Edit
+package com.example.vehicleapp.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class ExternalApiService {
+
+    private final RestTemplate restTemplate;
+    private final String externalApiUrl;
+
+    public ExternalApiService(RestTemplate restTemplate,
+                               @Value("${external-api.base-url}") String externalApiUrl) {
+        this.restTemplate = restTemplate;
+        this.externalApiUrl = externalApiUrl;
+    }
+
+    public boolean validatePostalCode(String postalCode) {
+        String url = externalApiUrl + "/validate-postal/" + postalCode;
+        try {
+            PostalCodeResponse response = restTemplate.getForObject(url, PostalCodeResponse.class);
+            return response != null && response.isValid();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static class PostalCodeResponse {
+        private boolean valid;
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+    }
+}
+✅ 2. InternalOwnerService
+java
+Copy
+Edit
+package com.example.vehicleapp.service;
+
+import com.example.vehicleapp.model.OwnerDto;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class InternalOwnerService {
+
+    private final RestTemplate restTemplate;
+    private final String internalApiUrl;
+
+    public InternalOwnerService(RestTemplate restTemplate,
+                                 @Value("${internal-api.base-url}") String internalApiUrl) {
+        this.restTemplate = restTemplate;
+        this.internalApiUrl = internalApiUrl;
+    }
+
+    public void save(OwnerDto owner) {
+        String url = internalApiUrl + "/internal/owners";
+        HttpEntity<OwnerDto> request = new HttpEntity<>(owner);
+        restTemplate.postForEntity(url, request, String.class);
+    }
+
+    public OwnerDto findById(String ownerId) {
+        String url = internalApiUrl + "/internal/owners/" + ownerId;
+        return restTemplate.getForObject(url, OwnerDto.class);
+    }
+}
+✅ 3. OwnerDto
+java
+Copy
+Edit
+package com.example.vehicleapp.model;
+
+public class OwnerDto {
+    private String ownerId;
+    private String licenseNumber;
+    private String postalCode;
+    private String name;
+
+    // Getters and setters
+    public String getOwnerId() { return ownerId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+
+    public String getLicenseNumber() { return licenseNumber; }
+    public void setLicenseNumber(String licenseNumber) { this.licenseNumber = licenseNumber; }
+
+    public String getPostalCode() { return postalCode; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+}
+✅ 4. RestTemplate Bean
+In your @Configuration class or main app class:
+
+java
+Copy
+Edit
+@Bean
+public RestTemplate restTemplate() {
+    return new RestTemplate();
+}
+✅ 5. application.yml (for local + test)
+yaml
+Copy
+Edit
+external-api:
+  base-url: http://localhost:8081
+internal-api:
+  base-url: http://localhost:8081
+Would you like the full controller as well, or should we generate test-only versions of these services for mocking in unit tests too?
+
+
+
+
+
+Tools
+
+
