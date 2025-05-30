@@ -217,7 +217,22 @@ Would you like a second dynamic stub for the internal API (e.g., different owner
 
 
 Tools
-
+++++
+Updated:
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/validate-postal/([A-Za-z0-9]+)"
+  },
+  "response": {
+    "status": 200,
+    "body": "{{#if (matches request.url '^/validate-postal/[0-9]{5}$')}}{\"valid\": true}{{else}}{\"valid\": false}{{/if}}",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": ["response-template"]
+  }
+}
 
 
 
